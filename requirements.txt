@@ -1,0 +1,7 @@
+openai
+transformers
+torch
+faiss-cpu
+langchain
+python-dotenv
+PyPDF2sentence-transformers
