@@ -1,23 +1,40 @@
-import streamlit as st
-from rag_utils import *
+from flask import Flask, request, jsonify
+import os
+import tempfile
+import requests
+from rag_utils import run_rag_pipeline
+from dotenv import load_dotenv
 
-st.set_page_config(page_title="Insurance RAG Assistant", layout="wide")
+# Load environment variables
+load_dotenv()
 
-st.title("Insurance Clause Assistant (RAG-based)")
+app = Flask(__name__)  # Corrected: __name__ instead of _name_
 
-uploaded_file = st.file_uploader("Upload Insurance PDF", type=["pdf"])
+@app.route("/hackrx/run", methods=["POST"])
+def hackrx_run():
+    data = request.get_json()
 
-if uploaded_file:
-    query = st.text_input("Ask a question about the uploaded document")
+    pdf_url = data.get("documents")
+    questions = data.get("questions")
 
-    if query:
-        with st.spinner("Processing..."):
-            chunks = load_pdf_chunks(uploaded_file)
-            embeddings = embed_chunks(chunks)
-            index = create_faiss_index(embeddings)
-            relevant = search_index(query, chunks, index)
-            context = "\n---\n".join(relevant)
-            answer = generate_answer(query, context)
+    if not pdf_url or not questions:
+        return jsonify({"error": "Missing 'documents' or 'questions' field."}), 400
 
-        st.success("Answer:")
-        st.markdown(answer)
+    try:
+        # Download the PDF temporarily
+        response = requests.get(pdf_url)
+        response.raise_for_status()
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(response.content)
+            tmp_file_path = tmp_file.name
+
+        # Process the questions
+        answers = run_rag_pipeline(tmp_file_path, questions)
+        return jsonify({"answers": answers})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":  # Corrected
+    app.run(debug=True, host="0.0.0.0", port=5000)
