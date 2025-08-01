@@ -46,17 +46,20 @@ def search_index(query, chunks, index, k=3):
 def generate_answer(query, context, model="gpt-4"):
     client = OpenAI()
     messages = [
-        {"role": "system", "content": "You are an insurance assistant. Justify answers using relevant clauses."},
+        {"role": "system", "content": "You are an insurance assistant. Provide short, concise answers (2–3 sentences max) based strictly on relevant clauses."},
         {"role": "user", "content": f"Query: {query}\n\nRelevant Clauses:\n{context}"}
     ]
     response = client.chat.completions.create(
         model=model,
-        messages=messages
+        messages=messages,
+        max_tokens=150  # ✅ Limits the response length
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content.strip()
+
 
 # ===================== MAIN FLOW ===================== #
-def run_rag_pipeline(pdf_path, query):
+
+def run_rag_pipeline_from_chunks(pdf_path, questions):
     print("📄 Loading document...")
     chunks = load_pdf_chunks(pdf_path)
 
@@ -66,17 +69,15 @@ def run_rag_pipeline(pdf_path, query):
     print("📦 Creating FAISS index...")
     index = create_faiss_index(embeddings)
 
-    print("🔍 Searching for relevant context...")
-    relevant = search_index(query, chunks, index)
+    print("🔍 Processing questions and generating answers...")
+    answers = []
+    for question in questions:
+        relevant = search_index(question, chunks, index)
+        full_context = "\n---\n".join(relevant)
+        answer = generate_answer(question, full_context)
+        answers.append(answer)
 
-
-    full_context = "\n---\n".join(relevant)
-
-    print("🧠 Generating answer from LLM...")
-    answer = generate_answer(query, full_context)
-
-    print("\n✅ Final Answer:")
-    print(answer)
+    return answers
 
 # ===================== EXAMPLE USAGE ===================== #
 if __name__ == "__main__":
