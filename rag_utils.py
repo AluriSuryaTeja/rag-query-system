@@ -1,15 +1,16 @@
 import os
 import faiss
+import requests
 import numpy as np
-import openai
-from openai import OpenAI
+# import openai
+# from openai import OpenAI
 from pypdf import PdfReader
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
 # ===================== ENV SETUP ===================== #
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# load_dotenv()
+# openai.api_key = os.getenv("OPENAI_API_KEY")
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # ===================== UTILITY FUNCTIONS ===================== #
@@ -43,18 +44,33 @@ def search_index(query, chunks, index, k=3):
     D, I = index.search(np.array([query_vec]), k)
     return [chunks[i] for i in I[0]]
 
-def generate_answer(query, context, model="gpt-4"):
-    client = OpenAI()
-    messages = [
-        {"role": "system", "content": "You are an insurance assistant. Provide short, concise answers (2–3 sentences max) based strictly on relevant clauses."},
-        {"role": "user", "content": f"Query: {query}\n\nRelevant Clauses:\n{context}"}
-    ]
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        max_tokens=150  # ✅ Limits the response length
-    )
-    return response.choices[0].message.content.strip()
+def generate_answer(query, context, model="llama3.2"):
+
+    url = "http://localhost:11434/api/chat"
+
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are an insurance assistant. Provide short, concise answers (2–3 sentences max) based strictly on relevant clauses.. You are given input in a JSON Format as { <Question> : <Context> }. Give the output in JSON format as {<AnswerNumber> : <Answer> }"},
+            {"role": "user", "content": str(context)}
+        ],
+        "stream": False
+    }
+
+    response = requests.post(url , json = payload)
+    try:
+        data = response.json()
+        if "message" in data:
+            return data["message"]["content"]
+        else:
+            print("❌ Unexpected API response:", data)
+            return f"Error: unexpected response format: {data}"
+    except Exception as e:
+        print("❌ Failed to parse response:", response.text)
+        return f"Error: failed to parse response - {str(e)}"
+
+    
 
 
 # ===================== MAIN FLOW ===================== #
@@ -70,17 +86,33 @@ def run_rag_pipeline_from_chunks(pdf_path, questions):
     index = create_faiss_index(embeddings)
 
     print("🔍 Processing questions and generating answers...")
-    answers = []
+
+    allQueries = {}
     for question in questions:
         relevant = search_index(question, chunks, index)
         full_context = "\n---\n".join(relevant)
-        answer = generate_answer(question, full_context)
-        answers.append(answer)
+        allQueries[question] = full_context
+    answer = generate_answer(question, allQueries)
+    # answers = 'GENERATED ANSWER'
+    
 
-    return answers
+    return answer
 
 # ===================== EXAMPLE USAGE ===================== #
 if __name__ == "__main__":
     user_pdf = "data/sample.pdf"  # Or ask for input()
-    user_query = input("❓ Enter your question: ")
-    run_rag_pipeline(user_pdf, user_query)
+    user_query = user_queries = [
+      "What is the grace period for premium payment under the National Parivar Mediclaim Plus Policy?",
+      "What is the waiting period for pre-existing diseases (PED) to be covered?",
+      "Does this policy cover maternity expenses, and what are the conditions?",
+      "What is the waiting period for cataract surgery?",
+      "Are the medical expenses for an organ donor covered under this policy?",
+      "What is the No Claim Discount (NCD) offered in this policy?",
+      "Is there a benefit for preventive health check-ups?",
+      "How does the policy define a 'Hospital'?",
+      "What is the extent of coverage for AYUSH treatments?",
+      "Are there any sub-limits on room rent and ICU charges for Plan A?"
+    ]
+    
+    answers = run_rag_pipeline_from_chunks(user_pdf, user_query)
+    print(answers)
