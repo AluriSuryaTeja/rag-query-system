@@ -96,19 +96,19 @@ def run_rag_pipeline(pdf_path, queries):
 
 # ===================== EXAMPLE USAGE ===================== #
 if __name__ == "__main__":
-    user_pdf = "data/sample.pdf"
-    user_queries = [
-      "What is the grace period for premium payment under the National Parivar Mediclaim Plus Policy?",
-      "What is the waiting period for pre-existing diseases (PED) to be covered?",
-      "Does this policy cover maternity expenses, and what are the conditions?",
-      "What is the waiting period for cataract surgery?",
-      "Are the medical expenses for an organ donor covered under this policy?",
-      "What is the No Claim Discount (NCD) offered in this policy?",
-      "Is there a benefit for preventive health check-ups?",
-      "How does the policy define a 'Hospital'?",
-      "What is the extent of coverage for AYUSH treatments?",
-      "Are there any sub-limits on room rent and ICU charges for Plan A?"
-    ]
+    # user_pdf = "data/sample.pdf"
+    # user_queries = [
+    #   "What is the grace period for premium payment under the National Parivar Mediclaim Plus Policy?",
+    #   "What is the waiting period for pre-existing diseases (PED) to be covered?",
+    #   "Does this policy cover maternity expenses, and what are the conditions?",
+    #   "What is the waiting period for cataract surgery?",
+    #   "Are the medical expenses for an organ donor covered under this policy?",
+    #   "What is the No Claim Discount (NCD) offered in this policy?",
+    #   "Is there a benefit for preventive health check-ups?",
+    #   "How does the policy define a 'Hospital'?",
+    #   "What is the extent of coverage for AYUSH treatments?",
+    #   "Are there any sub-limits on room rent and ICU charges for Plan A?"
+    # ]
 
     result = run_rag_pipeline(user_pdf, user_queries)
     print(json.dumps(result, indent=2))
