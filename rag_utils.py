@@ -61,6 +61,7 @@ def generate_answer(query, context, model="llama3.2"):
     response = requests.post(url , json = payload)
     try:
         data = response.json()
+        print(data)
         if "message" in data:
             return data["message"]["content"]
         else:
