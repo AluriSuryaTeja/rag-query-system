@@ -83,15 +83,13 @@ def run_rag_pipeline(pdf_path, queries):
     index = create_faiss_index(embeddings)
 
     print("🔍 Answering queries...")
-    results = []
+    results = {"answers": []}
     for query in queries:
         relevant = search_index(query, chunks, index)
         full_context = "\n---\n".join(relevant)
         answer = generate_answer(query, full_context)
-        results.append({
-            "query": query,
-            "answer": answer
-        })
+        results['answers'].append(answer)
+        
     return results
 
 # ===================== EXAMPLE USAGE ===================== #
