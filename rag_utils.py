@@ -11,7 +11,9 @@ from sentence_transformers import SentenceTransformer
 # ===================== ENV SETUP ===================== #
 # load_dotenv()
 # openai.api_key = os.getenv("OPENAI_API_KEY")
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+embedding_model = SentenceTransformer("intfloat/e5-small")
 
 # ===================== UTILITY FUNCTIONS ===================== #
 def load_pdf_chunks(pdf, chunk_min_len=50):
@@ -44,7 +46,7 @@ def search_index(query, chunks, index, k=3):
     D, I = index.search(np.array([query_vec]), k)
     return [chunks[i] for i in I[0]]
 
-def generate_answer(query, context, model="llama3.2"):
+def generate_answer(query, context, model="mistral:7b-v3"):
 
     url = "http://localhost:11434/api/chat"
 
@@ -61,7 +63,6 @@ def generate_answer(query, context, model="llama3.2"):
     response = requests.post(url , json = payload)
     try:
         data = response.json()
-        print(data)
         if "message" in data:
             return data["message"]["content"]
         else:
