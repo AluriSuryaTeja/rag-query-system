@@ -57,7 +57,7 @@ The system uses **Ollama models** for response generation and **Sentence Transfo
 
 CopyEdit
 
-`git clone https://github.com/Akshaya-Reddy20/rag-doc-query.git cd rag-doc-query`
+`git clone https://github.com/AluriSuryaTeja/rag-doc-query.git cd rag-doc-query`
 
 ### Create a virtual environment
 
